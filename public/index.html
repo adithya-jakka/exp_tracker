@@ -1,43 +1,135 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Web site created using create-react-app"
-    />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <!--
-      manifest.json provides metadata used when your web app is installed on a
-      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-    -->
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <!--
-      Notice the use of %PUBLIC_URL% in the tags above.
-      It will be replaced with the URL of the `public` folder during the build.
-      Only files inside the `public` folder can be referenced from the HTML.
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+      body {
+    background-color: #f8f9fa;
+}
+h1 {
+    text-align: center;
+}
 
-      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-      work correctly both with client-side routing and a non-root public URL.
-      Learn how to configure a non-root public URL by running `npm run build`.
-    -->
-    <title>React App</title>
+    </style>
   </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
+<body>
+<div class="container mt-5">
+    <h1 class="mb-4">Expense Tracker</h1>
 
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
+    <form id="expense-form" class="mb-4">
+        <div class="mb-3">
+            <input type="text" class="form-control" id="title" placeholder="Expense Title" required>
+        </div>
+        <div class="mb-3">
+            <input type="number" class="form-control" id="amount" placeholder="Amount" required>
+        </div>
+        <div class="mb-3">
+            <input type="text" class="form-control" id="category" placeholder="Category">
+        </div>
+        <button type="submit" class="btn btn-primary">Add Expense</button>
+    </form>
 
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
-  </body>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Amount</th>
+                <th>Category</th>
+                <th>Date</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="expense-table"></tbody>
+    </table>
+</div>
+
+<script>
+  
+const form = document.getElementById('expense-form');
+const table = document.getElementById('expense-table');
+let errorDiv = document.getElementById('error-message');
+if (!errorDiv) {
+    errorDiv = document.createElement('div');
+    errorDiv.id = 'error-message';
+    errorDiv.className = 'alert alert-danger';
+    errorDiv.style.display = 'none';
+    form.parentNode.insertBefore(errorDiv, form);
+}
+
+
+function getExpenses() {
+    return JSON.parse(localStorage.getItem('expenses') || '[]');
+}
+
+function saveExpenses(expenses) {
+    localStorage.setItem('expenses', JSON.stringify(expenses));
+}
+
+function fetchExpenses() {
+    try {
+        const data = getExpenses();
+        table.innerHTML = '';
+        data.forEach(expense => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${expense.title}</td>
+                <td>${expense.amount}</td>
+                <td>${expense.category || ''}</td>
+                <td>${new Date(expense.expense_date).toLocaleDateString()}</td>
+                <td><button class="btn btn-danger btn-sm" onclick="deleteExpense(${expense.id})">Delete</button></td>
+            `;
+            table.appendChild(tr);
+        });
+        errorDiv.style.display = 'none';
+    } catch (err) {
+        errorDiv.textContent = err.message;
+        errorDiv.style.display = 'block';
+    }
+}
+
+form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const title = document.getElementById('title').value;
+    const amount = document.getElementById('amount').value;
+    const category = document.getElementById('category').value;
+    try {
+        if (!title || !amount) throw new Error('Title and amount are required');
+        const expenses = getExpenses();
+        const newExpense = {
+            id: Date.now(),
+            title,
+            amount,
+            category,
+            expense_date: new Date().toISOString()
+        };
+        expenses.unshift(newExpense);
+        saveExpenses(expenses);
+        form.reset();
+        errorDiv.style.display = 'none';
+        fetchExpenses();
+    } catch (err) {
+        errorDiv.textContent = err.message;
+        errorDiv.style.display = 'block';
+    }
+});
+
+function deleteExpense(id) {
+    try {
+        let expenses = getExpenses();
+        expenses = expenses.filter(exp => exp.id !== id);
+        saveExpenses(expenses);
+        fetchExpenses();
+        errorDiv.style.display = 'none';
+    } catch (err) {
+        errorDiv.textContent = err.message;
+        errorDiv.style.display = 'block';
+    }
+}
+fetchExpenses();
+
+</script>
+</body>
 </html>
