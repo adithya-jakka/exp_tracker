@@ -41,3 +41,26 @@ Professionals monitoring project or business expenses.
 Access the live project here: http://34.100.150.166:3000
 
 This coding and testing is done by(J.LEELA ADITYA(23211a6738) & J.REVANTH(23211a6739)).
+
+Running with Docker:
+
+This project includes a Dockerfile for containerized deployment.
+
+🔹 For Other Developers (Pull & Run Image)
+
+Login to Docker Hub
+docker login
+
+Pull the image
+docker pull preetham1703/expensetracker:latest
+
+Run the container
+docker run -p 3000:3000 preetham1703/expensetracker:latest
+
+Check running containers
+docker ps
+
+View logs (optional)
+docker logs -f expensetracker-container
+
+This part is done by H.SUMITH(23211a6736).
