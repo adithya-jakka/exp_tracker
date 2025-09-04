@@ -38,7 +38,7 @@ Students tracking pocket money and study-related expenses.
 
 Professionals monitoring project or business expenses.
 
-Access the live project here: http://34.100.150.166:3000
+Access the live project link:34.100.150.166:3000
 
 This coding and testing is done by(J.LEELA ADITYA(23211a6738) & J.REVANTH(23211a6739)).
 
