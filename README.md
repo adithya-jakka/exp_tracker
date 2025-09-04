@@ -64,3 +64,43 @@ View logs (optional)
 docker logs -f expensetracker-container
 
 This part is done by H.SUMITH(23211a6736).
+
+Jenkins + GKE Deployment Workflow:
+
+We automated the deployment of the Expense Tracker Application using Jenkins CI/CD integrated with Google Kubernetes Engine (GKE).
+
+⚙ Jenkins Pipeline (Batch Script for Windows Node)
+REM ====== Configuration ======
+set REPO_URL=https://github.com/adithya-jakka/exp_tracker.git
+set BUILD_NUMBER=%BUILD_NUMBER%
+set DOCKER_USER=adityajakka
+set DOCKER_PASS=jakka@12345
+set IMAGE_NAME=expensetracker-1
+set GCP_PROJECT=cbd-a-6707
+set CLUSTER_NAME=cluster-1
+set CLUSTER_REGION=asia-south1
+set SERVICE_ACCOUNT_KEY=C:\Users\adity\Downloads\cbd-a-6707-ba1d12e593bd.json
+REM ====== Step 1: Clone latest code ======
+cd C:\
+if exist expensetracker rmdir /s /q expensetracker
+git clone %REPO_URL% expensetracker
+cd expensetracker
+
+REM ====== Step 2: Build Docker image ======
+docker build -t %DOCKER_USER%/%IMAGE_NAME%:%BUILD_NUMBER% .
+
+REM ====== Step 3: Push to Docker Hub ======
+echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
+docker push %DOCKER_USER%/%IMAGE_NAME%:%BUILD_NUMBER%
+
+REM ====== Step 4: Setup GCP & GKE credentials ======
+set PATH=C:\Users\adity\AppData\Local\Google\Cloud SDK\google-cloud-sdk\bin;%PATH%
+set USE_GKE_GCLOUD_AUTH_PLUGIN=True
+call gcloud auth activate-service-account --key-file="%SERVICE_ACCOUNT_KEY%"
+call gcloud container clusters get-credentials %CLUSTER_NAME% --region %CLUSTER_REGION% --project %GCP_PROJECT%
+
+REM ====== Step 5: Update Kubernetes Deployment ======
+echo "Tag to be used: %DOCKER_USER%/%IMAGE_NAME%:%BUILD_NUMBER%"
+call kubectl set image deployment/deployment-1 expensetracker-1=docker.io/%DOCKER_USER%/%IMAGE_NAME%:%BUILD_NUMBER%
+call kubectl rollout status deployment/deployment-1
+This part is done by G.SAIRAM(23211a6728).
