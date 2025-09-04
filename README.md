@@ -104,3 +104,21 @@ echo "Tag to be used: %DOCKER_USER%/%IMAGE_NAME%:%BUILD_NUMBER%"
 call kubectl set image deployment/deployment-1 expensetracker-1=docker.io/%DOCKER_USER%/%IMAGE_NAME%:%BUILD_NUMBER%
 call kubectl rollout status deployment/deployment-1
 This part is done by G.SAIRAM(23211a6728).
+📌 Steps Explained
+
+Clone Latest Code
+Pulls the most recent commit from the GitHub repository to ensure Jenkins builds from the latest source.
+
+Build Docker Image
+Creates a Docker image with a unique Jenkins build tag (%BUILD_NUMBER%).
+
+Push to Docker Hub
+Authenticates and uploads the Docker image to Docker Hub for external availability.
+
+Authenticate with GCP & GKE
+Uses a service account JSON key for secure authentication and fetches credentials for the GKE cluster.
+
+Update Kubernetes Deployment
+Updates the container image in the Kubernetes deployment, refreshing pods with the latest build.
+
+This part is done by Ananthu Sujeeth(23211a6707).
