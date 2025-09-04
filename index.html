@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+      body {
+    background-color: #f8f9fa;
+}
+h1 {
+    text-align: center;
+}
+    </style>
+  </head>
+
+<body>
+    <div class="container mt-3">
+        <div class="auth-links" style="text-align: right; margin-top: 10px;">
+            <span id="auth-section">
+                <a href="signup.html" class="btn btn-outline-primary btn-sm">Signup</a>
+                <a href="login.html" class="btn btn-outline-secondary btn-sm">Login</a>
+            </span>
+            <button id="logout-btn" class="btn btn-outline-danger btn-sm" style="display: none;" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <!-- Home Page Content (shown when not logged in) -->
+    <div id="home-page" class="container mt-5 text-center">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <h1 class="display-4 mb-4">Welcome to Expense Tracker</h1>
+                <p class="lead mb-4">Track your expenses efficiently and manage your budget with ease. Sign up or log in to get started!</p>
+                <div class="row mt-5">
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">📊 Track Expenses</h5>
+                                <p class="card-text">Monitor your spending across different categories and countries with multi-currency support.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">💰 Budget Management</h5>
+                                <p class="card-text">Categorize your expenses into essential and non-essential to better manage your finances.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-5">
+                    <a href="signup.html" class="btn btn-primary btn-lg me-3">Get Started - Sign Up</a>
+                    <a href="login.html" class="btn btn-outline-primary btn-lg">Already have an account? Login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expense Tracker Content (shown only when logged in) -->
+    <div id="expense-tracker" class="container mt-5" style="display: none;">
+        <h1 class="mb-4">Expense Tracker</h1>
+
+        <form id="expense-form" class="mb-4">
+            <div class="mb-3">
+                <input type="text" class="form-control" id="title" placeholder="Expense Title" required>
+            </div>
+            <div class="mb-3">
+                <input type="number" class="form-control" id="amount" placeholder="Amount" required>
+            </div>
+            <div class="mb-3">
+                <select class="form-control" id="category" required>
+                    <option value="">Select Category</option>
+                    <optgroup label="Essential">
+                        <option value="Food" data-type="Essential">Food</option>
+                        <option value="Rent" data-type="Essential">Rent</option>
+                        <option value="Utilities" data-type="Essential">Utilities</option>
+                        <option value="Transport" data-type="Essential">Transport</option>
+                    </optgroup>
+                    <optgroup label="Non-Essential">
+                        <option value="Trip" data-type="Non-Essential">Trip</option>
+                        <option value="Clothes" data-type="Non-Essential">Clothes</option>
+                        <option value="Entertainment" data-type="Non-Essential">Entertainment</option>
+                        <option value="Other" data-type="Non-Essential">Other</option>
+                    </optgroup>
+                </select>
+            </div>
+            <div class="mb-3">
+                <select class="form-control" id="country" required>
+                    <option value="">Select Country</option>
+                    <option value="IN">India</option>
+                    <option value="US">United States</option>
+                    <option value="GB">United Kingdom</option>
+                    <option value="EU">Europe</option>
+                    <option value="JP">Japan</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Expense</button>
+        </form>
+
+        <div class="mb-3">
+            <span id="currency-label" class="fw-bold"></span>
+        </div>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Amount</th>
+                    <th>Category</th>
+                    <th>Type</th>
+                    <th>Country</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="expense-table"></tbody>
+        </table>
+        <div class="mt-3">
+            <h5>Total Expenses: <span id="total-expenses">0</span></h5>
+            <h6>Essential: <span id="total-essential">0</span> | Non-Essential: <span id="total-nonessential">0</span></h6>
+        </div>
+    </div>
+
+<script>
+  
+
+const form = document.getElementById('expense-form');
+const table = document.getElementById('expense-table');
+const currencyLabel = document.getElementById('currency-label');
+const countrySelect = document.getElementById('country');
+const totalExpensesSpan = document.getElementById('total-expenses');
+const totalEssentialSpan = document.getElementById('total-essential');
+const totalNonEssentialSpan = document.getElementById('total-nonessential');
+let errorDiv = document.getElementById('error-message');
+if (!errorDiv) {
+    errorDiv = document.createElement('div');
+    errorDiv.id = 'error-message';
+    errorDiv.className = 'alert alert-danger';
+    errorDiv.style.display = 'none';
+    form.parentNode.insertBefore(errorDiv, form);
+}
+
+const countryCurrencyMap = {
+    IN: { symbol: '₹', name: 'INR', rate: 1 },
+    US: { symbol: '$', name: 'USD', rate: 83 }, // 1 USD = 83 INR (example rate)
+    GB: { symbol: '£', name: 'GBP', rate: 105 }, // 1 GBP = 105 INR
+    EU: { symbol: '€', name: 'EUR', rate: 90 }, // 1 EUR = 90 INR
+    JP: { symbol: '¥', name: 'JPY', rate: 0.55 } // 1 JPY = 0.55 INR
+};
+
+function getCurrencySymbol(countryCode) {
+    return countryCurrencyMap[countryCode]?.symbol || '';
+}
+
+function convertToINR(amount, countryCode) {
+    const rate = countryCurrencyMap[countryCode]?.rate || 1;
+    return Number(amount) * rate;
+}
+
+async function fetchExpenses() {
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            throw new Error('User not authenticated');
+        }
+        const response = await fetch('http://localhost:5000/expenses', {
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        });
+        if (!response.ok) {
+            throw new Error('Failed to fetch expenses');
+        }
+        const data = await response.json();
+        table.innerHTML = '';
+        let total = 0, totalEssential = 0, totalNonEssential = 0;
+        const currencyTotals = {};
+        data.forEach(expense => {
+            const tr = document.createElement('tr');
+            const symbol = getCurrencySymbol(expense.country);
+            tr.innerHTML = `
+                <td>${expense.title}</td>
+                <td>${symbol}${expense.amount}</td>
+                <td>${expense.category || ''}</td>
+                <td>${expense.type || ''}</td>
+                <td>${expense.country || ''}</td>
+                <td>${new Date(expense.expense_date).toLocaleDateString()}</td>
+                <td><button class="btn btn-danger btn-sm" onclick="deleteExpense('${expense.id}')">Delete</button></td>
+            `;
+            table.appendChild(tr);
+            const inrAmount = convertToINR(expense.amount, expense.country);
+            total += inrAmount;
+            if (expense.type === 'Essential') totalEssential += inrAmount;
+            else if (expense.type === 'Non-Essential') totalNonEssential += inrAmount;
+            if (!currencyTotals[expense.country]) {
+                currencyTotals[expense.country] = { symbol, total: 0 };
+            }
+            currencyTotals[expense.country].total += Number(expense.amount);
+        });
+        totalExpensesSpan.textContent = '₹' + total.toFixed(2);
+        totalEssentialSpan.textContent = '₹' + totalEssential.toFixed(2);
+        totalNonEssentialSpan.textContent = '₹' + totalNonEssential.toFixed(2);
+        let currencyTotalsDiv = document.getElementById('currency-totals');
+        if (!currencyTotalsDiv) {
+            currencyTotalsDiv = document.createElement('div');
+            currencyTotalsDiv.id = 'currency-totals';
+            table.parentNode.appendChild(currencyTotalsDiv);
+        }
+        let html = '<h6>Totals by Currency:</h6><ul>';
+        Object.keys(currencyTotals).forEach(code => {
+            html += `<li>${currencyTotals[code].symbol}${currencyTotals[code].total.toFixed(2)} (${code})</li>`;
+        });
+        html += '</ul>';
+        currencyTotalsDiv.innerHTML = html;
+        errorDiv.style.display = 'none';
+    } catch (err) {
+        errorDiv.textContent = err.message;
+        errorDiv.style.display = 'block';
+    }
+}
+
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const title = document.getElementById('title').value.trim();
+    const amount = document.getElementById('amount').value;
+    const categorySelect = document.getElementById('category');
+    const category = categorySelect.value;
+    const type = categorySelect.options[categorySelect.selectedIndex].getAttribute('data-type');
+    const country = countrySelect.value;
+    try {
+        if (!title || !amount || !category || !country) throw new Error('All fields are required');
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('User not authenticated');
+        const response = await fetch('http://localhost:5000/expenses', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ title, amount, category, type, country })
+        });
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.message || 'Failed to add expense');
+        }
+        form.reset();
+        fetchExpenses();
+        errorDiv.style.display = 'none';
+    } catch (err) {
+        errorDiv.textContent = err.message;
+        errorDiv.style.display = 'block';
+    }
+});
+
+async function deleteExpense(id) {
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('User not authenticated');
+        const response = await fetch(`http://localhost:5000/expenses/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        });
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.message || 'Failed to delete expense');
+        }
+        fetchExpenses();
+        errorDiv.style.display = 'none';
+    } catch (err) {
+        errorDiv.textContent = err.message;
+        errorDiv.style.display = 'block';
+    }
+}
+
+countrySelect.addEventListener('change', function() {
+    const symbol = getCurrencySymbol(this.value);
+    currencyLabel.textContent = symbol ? `Currency: ${symbol}` : '';
+    fetchExpenses();
+});
+
+// Set default country to India
+countrySelect.value = 'IN';
+currencyLabel.textContent = 'Currency: ₹';
+
+// Check authentication status and update UI
+function checkAuthStatus() {
+    const token = localStorage.getItem('token');
+    const authSection = document.getElementById('auth-section');
+    const logoutBtn = document.getElementById('logout-btn');
+    const homePage = document.getElementById('home-page');
+    const expenseTracker = document.getElementById('expense-tracker');
+
+    if (token) {
+        // User is logged in - show expense tracker, hide home page
+        authSection.style.display = 'none';
+        logoutBtn.style.display = 'inline-block';
+        homePage.style.display = 'none';
+        expenseTracker.style.display = 'block';
+        fetchExpenses();
+    } else {
+        // User is not logged in - show home page, hide expense tracker
+        authSection.style.display = 'inline';
+        logoutBtn.style.display = 'none';
+        homePage.style.display = 'block';
+        expenseTracker.style.display = 'none';
+        table.innerHTML = '';
+        totalExpensesSpan.textContent = '0';
+        totalEssentialSpan.textContent = '0';
+        totalNonEssentialSpan.textContent = '0';
+        if (errorDiv) {
+            errorDiv.style.display = 'none';
+        }
+    }
+}
+
+// Logout function
+async function logout() {
+    try {
+        const token = localStorage.getItem('token');
+        if (token) {
+            // Call logout endpoint (optional, but good practice)
+            await fetch('http://localhost:5000/auth/logout', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            });
+        }
+    } catch (err) {
+        console.log('Logout error:', err);
+    } finally {
+        // Clear token regardless of API call success
+        localStorage.removeItem('token');
+        checkAuthStatus();
+    }
+}
+
+// Check auth status on page load
+checkAuthStatus();
+
+</script>
+</body>
+</html>
