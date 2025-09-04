@@ -4,7 +4,6 @@ services:
     env: node
     region: oregon
     branch: main
-    rootDir: server
     buildCommand: npm install
     startCommand: node index.js
     repo: https://github.com/adithya-jakka/FINAL-EXPENSE
