@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: FINAL-EXPENSE
+    env: node
+    region: oregon
+    branch: main
+    buildCommand: npm install
+    startCommand: node server/index.js
+    repo: https://github.com/adithya-jakka/FINAL-EXPENSE
+    envVars:
+      # Add environment variables here if needed, example:
+      # - key: MONGO_URI
+      #   value: your_mongodb_connection_string
+      #   sync: false
