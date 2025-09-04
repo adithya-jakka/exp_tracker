@@ -121,4 +121,19 @@ Uses a service account JSON key for secure authentication and fetches credential
 Update Kubernetes Deployment
 Updates the container image in the Kubernetes deployment, refreshing pods with the latest build.
 
-This part is done by Ananthu Sujeeth(23211a6707).
+This part is done by (Ananthu Sujeeth(23211a6707) & B.Shivaram(23211a6717)).
+
+✅ Advantages of this Setup
+
+Fully automated CI/CD pipeline from GitHub → Jenkins → Docker Hub → GKE.
+
+Each Jenkins build creates a unique versioned image (expensetracker:<build_number>).
+
+Eliminates manual deployment errors.
+
+Provides scalability and reliability using Kubernetes.
+
+Live Deployment link:34.100.150.166:3000
+
+This part is done by (B.Shivaram(23211a6717) & Ananathu Sujeeth(23211a6707))
+
