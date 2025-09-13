@@ -1,10 +1,8 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
+import Expense from '../models/Expense.js';
 
 const router = express.Router();
-
-// In-memory expense storage (for testing without MongoDB)
-let expenses = [];
 
 // Middleware to verify JWT token
 const authenticateToken = (req, res, next) => {
@@ -21,9 +19,9 @@ const authenticateToken = (req, res, next) => {
 };
 
 // Get all expenses for the logged-in user
-router.get('/', authenticateToken, (req, res) => {
+router.get('/', authenticateToken, async (req, res) => {
   try {
-    const userExpenses = expenses.filter(exp => exp.userId === req.user.id).sort((a, b) => new Date(b.expense_date) - new Date(a.expense_date));
+    const userExpenses = await Expense.find({ userId: req.user.id }).sort({ expense_date: -1 });
     res.json(userExpenses);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -31,28 +29,30 @@ router.get('/', authenticateToken, (req, res) => {
 });
 
 // Add a new expense
-router.post('/', authenticateToken, (req, res) => {
+router.post('/', authenticateToken, async (req, res) => {
   const { title, amount, category, type, country } = req.body;
 
   try {
     // Check for duplicate expense for today
     const today = new Date().toLocaleDateString();
-    const existingExpense = expenses.find(exp =>
-      exp.userId === req.user.id &&
-      exp.title.trim().toLowerCase() === title.trim().toLowerCase() &&
-      Number(exp.amount) === Number(amount) &&
-      exp.category === category &&
-      exp.type === type &&
-      exp.country === country &&
-      new Date(exp.expense_date).toLocaleDateString() === today
-    );
+    const existingExpense = await Expense.findOne({
+      userId: req.user.id,
+      title: title.trim().toLowerCase(),
+      amount: Number(amount),
+      category,
+      type,
+      country,
+      expense_date: {
+        $gte: new Date(today),
+        $lt: new Date(new Date(today).getTime() + 24 * 60 * 60 * 1000)
+      }
+    });
 
     if (existingExpense) {
       return res.status(400).json({ message: 'Duplicate expense detected for today!' });
     }
 
-    const expense = {
-      id: Date.now(),
+    const expense = new Expense({
       userId: req.user.id,
       title: title.trim(),
       amount: Number(amount),
@@ -60,9 +60,9 @@ router.post('/', authenticateToken, (req, res) => {
       type,
       country,
       expense_date: new Date()
-    };
+    });
 
-    expenses.push(expense);
+    await expense.save();
     res.status(201).json(expense);
   } catch (err) {
     res.status(400).json({ message: err.message });

@@ -11,3 +11,6 @@ services:
       - key: JWT_SECRET
         value: your_jwt_secret_here
         sync: false
+      - key: MONGO_URI
+        value: mongodb+srv://expensetrackeruser:jakka@expensetrackercluster.aonhc5l.mongodb.net/?retryWrites=true&w=majority&appName=ExpenseTrackerCluster
+        sync: false
